@@ -57,6 +57,8 @@ import {
 } from "../types";
 import Logo from "./Logo";
 import OffsetDisplay from "./OffsetDisplay";
+import { calculateOffsets } from "@/lib/offsets/calc";
+import { formatOffsetsText } from "@/lib/offsets/format";
 import { toast } from "sonner";
 import Image from "next/image";
 
@@ -1421,6 +1423,43 @@ const SVMOffsetCalculator = () => {
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
+                <div className="flex items-center justify-end gap-2 py-2">
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        const offsets = calculateOffsets({ accounts, instructionData });
+                        const text = formatOffsetsText(offsets, language);
+                        await navigator.clipboard.writeText(text);
+                        toast("Offsets copied to clipboard.");
+                      } catch (e) {
+                        console.error(e);
+                        toast("Unable to copy offsets.");
+                      }
+                    }}
+                  >
+                    <Copy className="h-4 w-4 mr-2" /> Copy Offsets
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const offsets = calculateOffsets({ accounts, instructionData });
+                      const text = formatOffsetsText(offsets, language);
+                      const blob = new Blob([text], { type: "text/plain" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      const base = currentProject?.name || "offsets";
+                      a.download = `${base.toLowerCase().replace(/\s+/g, "-")}-${language.toLowerCase()}.txt`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" /> Download Offsets
+                  </Button>
+                </div>
                 <OffsetDisplay accounts={accounts} instructionData={instructionData} language={language} />
               </div>
             </CardContent>

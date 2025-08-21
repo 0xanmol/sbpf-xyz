@@ -61,6 +61,7 @@ import { calculateOffsets } from "@/lib/offsets/calc";
 import { formatOffsetsText } from "@/lib/offsets/format";
 import { toast } from "sonner";
 import Image from "next/image";
+import { encodeProjectToQuery, decodeProjectFromQuery } from "@/lib/share/codec";
 
 const AUTOSAVE_DELAY = 1000;
 const LAST_PROJECT_KEY = "svm-last-project-id";
@@ -824,9 +825,11 @@ const SVMOffsetCalculator = () => {
         
         if (sharedProject) {
           try {
-            const decodedData = atob(decodeURIComponent(sharedProject));
-            const projectData = JSON.parse(decodedData) as Project;
+            const projectData = decodeProjectFromQuery(sharedProject) as Project | null;
             
+            if (!projectData) {
+              throw new Error('Invalid shared project payload');
+            }
             // Check if a project with this UUID already exists
             const existingProject = parsedProjects.find((p: Project) => p.id === projectData.id);
             
@@ -1084,7 +1087,10 @@ const SVMOffsetCalculator = () => {
       ? 'http://localhost:3000' 
       : 'https://sbpf.xyz';
     
-    const encodedData = encodeURIComponent(btoa(JSON.stringify(projectData)));
+    const encodedData = encodeProjectToQuery({
+      schemaVersion: 1,
+      ...projectData,
+    });
     const url = `${baseUrl}?project=${encodedData}`;
     setShareUrl(url);
     
